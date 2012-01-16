@@ -1,18 +1,104 @@
-##
+## CODE TO EXTRACT CROSS_SECTIONS FROM THE TEXT LABELS IN THE DFX FILES
 
 # Pasig River Cross-sections
-files=dir(pattern="PR*.*.txt")
+all_files=dir(pattern="PR*.*.txt")
 
 # Parameters
 yrange=400 # The code looks for neighbouring points within this y-range to form the cross-section
 ytol=5 # The code considers points with y-values that differ by ytol to be 'nearly horizontally aligned'
-xtol=2 # The code considers points with x-values that differ by ytol to be 'nearly vertically aligned'
+xtol=2 # The code considers points with x-values that differ by xtol to be 'nearly vertically aligned'
+
+
+manually_clean<-function(dta_in,a_file){
+    # This function allows the user to manually place edits into the data.  The
+    # advantage of doing it this way is that the original data is cleanly
+    # edited
+    if(a_file=="PR00150-00250.txt"){
+        # Correct data entry error
+        ind=which((dta_in[,1]==96.17)) #&(dta_in[,2]== 86.476591)&(dta_in[,3]== -355.6864))
+        print(c('Replacing ', ind, ' in ', a_file) )
+        dta_in[ind,1]="86.87"
+    }
+
+    if(a_file=="PR00745-00800.txt"){
+        # This section has a bridge, and the bridge elevations are mixed with the cross-section ones
+        print(c('REMOVING SECTION WITH BRIDGE FROM ', a_file, '. You will have to treat this one manually '))
+        dta_in = dta_in[dta_in[,3]<500,]
+    }
+
+    if(a_file=="PR01750-01850.txt"){
+        # In this one, my script seems to have incorrectly read the output,
+        # because there is a space after the minus sign in the character (unusual).
+        ind=which(as.character(dta_in[,1])=="- ")
+        print(c('Replacing ', ind, 'in ', a_file))        
+        #stop()
+        dta_in[ind,1]="-5.73"
+    }
+
+
+    if(a_file=="PR02350-02450.txt"){
+        ind = which( (dta_in[,1]==13.80)|(dta_in[,1]==16.35))
+        print(c('Removing ', ind , ' in ', a_file))
+        dta_in=dta_in[-ind,]
+
+        ind = which(dta_in[,1]==-43.95)
+        print(c('Correcting ', ind , ' in ', a_file))
+        dta_in[ind,1]=-33.95
+    }    
+
+    if(a_file=="PR03092-03200.txt"){
+        print(c('REMOVING SECTION WITH BRIDGE FROM ', a_file, '. You will have to treat this one manually '))
+        ind=which(dta_in[,3]>400)
+        dta_in=dta_in[-ind,]
+    }
+        
+    if(a_file=="PR03850-03950.txt"){
+        ind1=which(dta_in[,1]==-67.82)
+        ind2=which(dta_in[,1]==-67.78)
+        print(c('Re-ordering points representing thin wall in ', a_file))
+        #tmp=dta_in[ind1,]
+        dta_in[ind1,1]=-67.78 #dta_in[ind2,1]
+        dta_in[ind2,]=-67.82 #tmp
+
+        ind=which(dta_in[,1]==63.18)
+        ind2=ind[which.max(dta_in[ind,2])]
+        print(c('Correcting ', ind2, ' in ', a_file))
+        dta_in[ind2,1]=70.78
+   
+        ind=which(dta_in[,1]==64.78)
+        print(c('Correcting ', ind, ' in ', a_file))
+        dta_in[ind,1]=74.78 
+
+    }
+
+
+    if(a_file=="PR04000-04100.txt"){
+        ind = which(dta_in[,1]==66.59)
+        print(c('Correcting ', ind, ' in ', a_file))
+        dta_in[ind,1]=59.69
+    }
+
+    if(a_file=="PR04600-04700.txt"){
+        ind=which(dta_in[,1]==69.92)
+        ind2=ind[which.max(dta_in[ind,2])]
+        print(c('Correcting ', ind2, ' in ', a_file))
+        dta_in[ind2,1]=70.20
+    }
+
+
+    # Return the modified data set
+    return(dta_in)
+}
+
 
 # Loop through all files
-for(file in files){
+for(a_file in all_files){
 
     # Read in the data
-    dta_in=read.csv(file,header=F)
+    dta_in=read.csv(a_file,header=F)
+    dta_in[,1]=as.character(dta_in[,1])
+
+    dta_in=manually_clean(dta_in,a_file)
 
     # Coerce the data into a suitable format
     dta=matrix(NA,nrow=dim(dta_in)[1],ncol=3)
@@ -208,13 +294,13 @@ for(file in files){
         ## X values on top 
         section=cbind(xvalues,yvalues)
         if(max(abs(section[,1]-sort(section[,1])))!=0){
-            print('ERROR: section values are not increasing')
+            print(c('ERROR: section values are not increasing in', a_file, 'around y= ', median(dta[row1,3])))
             print(section)
             stop()
         }else{
             print('SUCCESS? Section values are:')
             print(section)
-            dev.new()
+            #dev.new()
             plot(section[,1],section[,2],t='o',asp=4)
         }
 

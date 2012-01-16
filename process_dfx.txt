@@ -1,4 +1,4 @@
-### Script to rip things out of the dfx file
+### Script to extract numeric text labels from a dfx file
 ### This is probably way more complex than it should be.
 # Aim is to extract the text string, and its point location, for features of
 # the dfx file which record the position of points on cross-sections.
