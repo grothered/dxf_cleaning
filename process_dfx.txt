@@ -30,7 +30,7 @@ for i in ./data/*.dxf;
 
     #echo 'Removing integers from output'
     #gawk 'BEGIN{ FS = "," } {$1 ~/\./}' tmp10.txt > tmp11.txt
-    mv tmp10.txt $(basename $i dxf).txt
+    mv tmp10.txt $(basename $i dxf)"txt"
 
 done
 
