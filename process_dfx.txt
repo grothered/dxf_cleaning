@@ -1,0 +1,54 @@
+### Script to rip things out of the dfx file
+### This is probably way more complex than it should be.
+# Aim is to extract the text string, and its point location, for features of
+# the dfx file which record the position of points on cross-sections.
+
+for i in ./data/*.dxf;
+    do echo $i;
+    echo 'Ogr translation'
+    ogrinfo -al $i > tmp2.txt
+    #ogrinfo -al autodesk2.dxf > tmp2.txt
+    #ogrinfo -al plot1.dxf > tmp2.txt
+
+    echo 'Initial Filter'
+    gawk 'BEGIN { RS = "" ; FS = "\n"} { $2 ~/"TRUK"/} { print $2 $7 $9 }' tmp2.txt > tmp3.txt
+
+    echo 'Get rid of null values and those vb_Elev values, and non POINT entries'
+    grep -v "null" tmp3.txt > tmp4.txt
+    grep -v "vb_Elev" tmp4.txt > tmp5.txt
+    gawk '/POINT/' tmp5.txt > tmp6.txt
+
+    gawk 'BEGIN { FS = " POINT "} {print $2}' tmp6.txt | tr -d "()" > tmp7.txt
+    gawk '{print $1 " , " $2 " , " $3 }' tmp7.txt > tmp71.txt
+    gawk 'BEGIN {FS = " " } {print $8 " "}' tmp6.txt > tmp8.txt
+
+    echo 'Concatenate the files'
+    paste -d , tmp8.txt tmp71.txt > tmp9.txt
+
+    echo 'Removing character strings from output'
+    gawk 'BEGIN{ FS = "," } $1 !~/[A-Z]/' tmp9.txt > tmp10.txt
+
+    #echo 'Removing integers from output'
+    #gawk 'BEGIN{ FS = "," } {$1 ~/\./}' tmp10.txt > tmp11.txt
+    mv tmp10.txt $(basename $i dxf).txt
+
+done
+
+
+
+#echo 'Second Filter'
+#gawk '/Style = LABEL/' tmp3.txt > tmp4.txt
+#
+#echo 'GREP Filter'
+#grep 'TRUK' tmp4.txt > tmp3.txt
+#
+#echo 'AWK filter again'
+#gawk 'BEGIN { FS = "t:"} {print $2 }' tmp3.txt > tmp4.txt
+#
+#echo 'Get the characters'
+#gawk 'BEGIN { FS = "," } { print $1 }' tmp4.txt | tr -d "\"" > tmp5.txt
+#
+#echo 'Concatenate the files'
+#paste -d , tmp5.txt tmp61.txt > tmp7.txt
+#
+
